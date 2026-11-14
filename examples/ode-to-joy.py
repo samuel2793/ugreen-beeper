@@ -7,9 +7,10 @@ project, because the stock UGREEN driver cannot change frequency.
 """
 
 import argparse
+import sys
 import time
 
-from ugreen_beeper import Beeper, SysfsFrequencyProcfsBackend
+from ugreen_beeper import Beeper, BeeperError, SysfsFrequencyProcfsBackend
 
 
 # (note name, frequency in Hz, duration in ms). All values remain within the
@@ -35,17 +36,22 @@ def main() -> int:
         return 0
 
     beeper = Beeper(SysfsFrequencyProcfsBackend())
-    for note, frequency_hz, duration_ms in ODE_TO_JOY:
-        print(f"playing {note} ({frequency_hz} Hz)")
-        beeper.beep(
-            count=1,
-            duration_ms=duration_ms,
-            interval_ms=PAUSE_MS,
-            frequency_hz=frequency_hz,
-        )
-        # The driver schedules playback asynchronously; do not overwrite a
-        # note before its finite on-time and pause have elapsed.
-        time.sleep((duration_ms + PAUSE_MS) / 1000)
+    try:
+        for note, frequency_hz, duration_ms in ODE_TO_JOY:
+            print(f"playing {note} ({frequency_hz} Hz)")
+            beeper.beep(
+                count=1,
+                duration_ms=duration_ms,
+                interval_ms=PAUSE_MS,
+                frequency_hz=frequency_hz,
+            )
+            # The driver schedules playback asynchronously; do not overwrite a
+            # note before its finite on-time and pause have elapsed.
+            time.sleep((duration_ms + PAUSE_MS) / 1000)
+    except BeeperError as exc:
+        print(f"ode-to-joy: {exc}", file=sys.stderr)
+        print("Try: sudo env PYTHONPATH=src python3 examples/ode-to-joy.py --play", file=sys.stderr)
+        return 1
     return 0
 
 
