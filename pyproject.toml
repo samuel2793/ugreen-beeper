@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ugreen-beeper"
+version = "0.1.0"
+description = "Control UGREEN NAS hardware beepers from Linux, automation and Python"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [{name = "UGREEN Beeper contributors"}]
+keywords = ["ugreen", "nas", "buzzer", "beeper", "linux", "automation"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: System :: Hardware",
+]
+
+[project.scripts]
+ugreen-beep = "ugreen_beeper.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

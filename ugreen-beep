@@ -1,0 +1,5 @@
+#!/bin/sh
+# Run from a source checkout or via a symlink without a pip install.
+set -eu
+PROJECT_DIR=$(dirname "$(readlink -f "$0")")
+exec env PYTHONPATH="$PROJECT_DIR/src${PYTHONPATH:+:$PYTHONPATH}" python3 -m ugreen_beeper "$@"
