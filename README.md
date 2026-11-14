@@ -86,8 +86,10 @@ ugreen-beep status                             # procfs accessibility
 ugreen-beep event disk-warning --config /etc/ugreen-beeper/events.json
 ```
 
-Parameters: `-t/--count` (1–20), `-l/--duration-ms` (10–5000), and
-`-i/--interval-ms` (0–10000). Estimated total duration is limited to 120 s
+Parameters: `-t/--count` (1–20), `-l/--duration-ms` (20–5000), and
+`-i/--interval-ms` (20–10000). The inspected vendor driver returns `EFAULT`
+for either timing field below 20 ms, including an interval for a single beep.
+Estimated total duration is limited to 120 s
 as an accidental-alarm guard. Exit status is `0` on accepted write, `1` for
 a hardware/configuration error, `2` for bad CLI syntax. A successful write
 does not prove the sound was physically audible.

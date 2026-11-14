@@ -36,8 +36,8 @@ def make_parser() -> argparse.ArgumentParser:
 
     beep_cmd = commands.add_parser("beep", help="emit one vendor repeat command")
     beep_cmd.add_argument("-t", "--count", type=int, default=1, help="number of beeps (1–20)")
-    beep_cmd.add_argument("-l", "--duration-ms", type=int, default=400, help="on-time in ms (10–5000)")
-    beep_cmd.add_argument("-i", "--interval-ms", type=int, default=500, help="pause in ms (0–10000)")
+    beep_cmd.add_argument("-l", "--duration-ms", type=int, default=400, help="on-time in ms (20–5000)")
+    beep_cmd.add_argument("-i", "--interval-ms", type=int, default=500, help="pause in ms (20–10000)")
     beep_cmd.add_argument(
         "-f", "--frequency", dest="frequency_hz", type=int,
         help="physical frequency in Hz (only on a backend that explicitly supports it)",

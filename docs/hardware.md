@@ -55,6 +55,10 @@ Only `rep` is used here. `beeper_write` has no frequency parsing path; its
 normal playback calls copy the configured PWM state and toggle enablement.
 No unknown procfs command was sent.
 
+The installed vendor parser also rejects a duration or interval below **20 ms**
+with `EFAULT`, including an interval attached to a single beep. The library
+therefore validates both timing values as 20 ms or greater.
+
 Dynamic frequency changes are **not available through the installed vendor
 procfs driver**. Direct PWM access would conflict with the `ug_beep` owner;
 unbind/rebind is not a supported approach.

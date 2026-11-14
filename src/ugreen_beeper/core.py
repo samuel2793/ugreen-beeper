@@ -39,8 +39,10 @@ class Beep:
     def __post_init__(self) -> None:
         limits = (
             ("count", self.count, 1, 20),
-            ("duration_ms", self.duration_ms, 10, 5_000),
-            ("interval_ms", self.interval_ms, 0, 10_000),
+            # The inspected vendor driver rejects either field below 20 ms,
+            # even when count is one and the interval is not played.
+            ("duration_ms", self.duration_ms, 20, 5_000),
+            ("interval_ms", self.interval_ms, 20, 10_000),
         )
         for name, value, minimum, maximum in limits:
             if type(value) is not int or not minimum <= value <= maximum:
