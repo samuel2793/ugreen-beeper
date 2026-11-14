@@ -14,3 +14,4 @@ kernel/ug_beep_frequency/*.mod.c
 kernel/ug_beep_frequency/.*.cmd
 kernel/ug_beep_frequency/Module.symvers
 kernel/ug_beep_frequency/modules.order
+scripts/__pycache__/

@@ -33,3 +33,19 @@ period and 500,000 ns duty cycle. It was then returned to 950 Hz. One finite
 the buzzer as enabled after one second. This confirms PWM configuration and
 automatic stop behavior, not an independent oscilloscope measurement or a
 subjective audible-tone comparison.
+
+## Reproducible build
+
+The repository deliberately does not ship a `.ko`. Obtain the exact UGREEN
+6.1.84 build tree, prepare it using its matching configuration, then build
+without deploying:
+
+```sh
+scripts/build-ug-beep-module.sh /path/to/prepared/linux-6.1.84 ./dist
+```
+
+The script requires a generated `include/config/kernel.release`, insists on
+release `6.1.84`, checks the resulting ARM64 vermagic, and writes only to the
+selected output directory. It does not SSH, copy, load, unload or install a
+module. Building against upstream Linux 6.1.84 was sufficient for the initial
+experimental validation but is not a substitute for the vendor build tree.
