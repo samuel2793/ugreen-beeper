@@ -4,7 +4,7 @@ Control the physical beeper in supported **UGREEN NAS** devices from Linux,
 scripts, automation systems, systemd services, or Python. No long-running daemon
 or external runtime dependencies.
 
-**Status: experimental v0.1.0.** Tested on a UGREEN DH4300 Plus with Debian 12,
+**Status: experimental v0.2.0.** Tested on a UGREEN DH4300 Plus with Debian 12,
 kernel 6.1.84 and the vendor `ug-beep` driver. Other models are **not** yet
 confirmed. Not affiliated with UGREEN.
 
@@ -20,8 +20,8 @@ rep <count> <duration_ms> <interval_ms>
 
 to `/proc/nas/beeper`. This package validates arguments and sends the same
 command. It does **not** directly manipulate PWM, unbind kernel drivers or
-change the kernel/device tree. Frequency is not supported because the tested
-`ugbeep` helper ignores `-f`.
+change the kernel/device tree. Static inspection of the installed driver has
+confirmed that it fixes the PWM at ~950 Hz; see [hardware notes](docs/hardware.md).
 
 ## Requirements
 
@@ -81,6 +81,7 @@ executable path. Avoid depending on a service's `PATH` setting.
 ugreen-beep beep -t 1 -l 150                   # one short beep
 ugreen-beep beep -t 3 -l 200 -i 250            # repeated alarm
 ugreen-beep beep --dry-run -t 3 -l 200 -i 250  # show protocol command only
+ugreen-beep beep --frequency 1500              # rejected by the current procfs backend
 ugreen-beep status                             # procfs accessibility
 ugreen-beep event disk-warning --config /etc/ugreen-beeper/events.json
 ```
@@ -90,6 +91,10 @@ Parameters: `-t/--count` (1–20), `-l/--duration-ms` (10–5000), and
 as an accidental-alarm guard. Exit status is `0` on accepted write, `1` for
 a hardware/configuration error, `2` for bad CLI syntax. A successful write
 does not prove the sound was physically audible.
+
+`-f/--frequency` is a future-facing API option but is deliberately rejected,
+including with `--dry-run`, by `ProcfsBackend`. It must never become a no-op.
+A future backend may advertise it only when it changes the physical PWM signal.
 
 ## Named events
 
@@ -120,8 +125,10 @@ from ugreen_beeper import Beeper
 Beeper().beep(count=2, duration_ms=150, interval_ms=200)
 ```
 
-The `Beeper` class accepts any object with a `send(Beep)` method, so future
-hardware backends do not require replacing application-level calls.
+The `Beeper` class accepts any object with a `send(Beep)` method. Backends can
+declare `BackendCapabilities`, including `supports_frequency` and an optional
+inclusive `frequency_range_hz`. Requesting `frequency_hz` from a backend that
+does not declare support raises `UnsupportedFrequencyError`.
 
 ## Run a notification after another command
 
@@ -152,15 +159,17 @@ must be performed deliberately on a supported NAS.
   control is inherited from the device and is **not** managed by this project.
 - A local user or process with device write permissions can make audible
   sounds. Do not treat this as an authenticated alert delivery system.
-- No frequency control, playback queue, concurrent-writer arbitration,
+- No frequency control in the verified vendor driver, playback queue, concurrent-writer arbitration,
   confirmation of physical sound, or support for unsupported kernels yet.
 - Input is validated as integers; no shell is used to send device commands.
 
 See [hardware and compatibility notes](docs/hardware.md).
 
-## Roadmap (not in v0.1.0)
+## Roadmap
 
 - Hardware verification on more UGREEN models.
+- An opt-in backend for a reviewed vendor-driver extension, if installed by an
+  administrator; see [the driver proposal](docs/driver-frequency-proposal.md).
 - Optional queue/serialization for competing producers.
 - Pattern sequences, callback integrations and pluggable transports.
 - Packaging and service integration examples.

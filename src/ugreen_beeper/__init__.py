@@ -1,6 +1,16 @@
 """UGREEN NAS hardware buzzer control."""
 
-from .core import Beep, Beeper, BeeperError, ProcfsBackend
+from .core import (
+    BackendCapabilities,
+    Beep,
+    Beeper,
+    BeeperError,
+    ProcfsBackend,
+    UnsupportedFrequencyError,
+)
 
-__all__ = ["Beep", "Beeper", "BeeperError", "ProcfsBackend"]
-__version__ = "0.1.0"
+__all__ = [
+    "BackendCapabilities", "Beep", "Beeper", "BeeperError", "ProcfsBackend",
+    "UnsupportedFrequencyError",
+]
+__version__ = "0.2.0"

@@ -17,6 +17,13 @@ class CLITests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertEqual(out.getvalue(), "rep 2 400 500\n")
 
+    def test_frequency_is_rejected_even_in_dry_run(self):
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            code = main(["beep", "--frequency", "1500", "--dry-run"])
+        self.assertEqual(code, 1)
+        self.assertIn("frequency control is not supported", err.getvalue())
+
     def test_cli_writes_to_fake_device(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / "beeper"

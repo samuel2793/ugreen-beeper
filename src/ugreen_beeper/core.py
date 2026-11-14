@@ -12,6 +12,18 @@ class BeeperError(RuntimeError):
     """A beeper operation could not be completed."""
 
 
+class UnsupportedFrequencyError(BeeperError):
+    """The selected transport cannot change the physical PWM frequency."""
+
+
+@dataclass(frozen=True)
+class BackendCapabilities:
+    """Explicit hardware features exposed by one backend."""
+
+    supports_frequency: bool = False
+    frequency_range_hz: tuple[int, int] | None = None
+
+
 @dataclass(frozen=True)
 class Beep:
     """A single vendor `rep` operation; all durations are milliseconds."""
@@ -19,6 +31,7 @@ class Beep:
     count: int = 1
     duration_ms: int = 400
     interval_ms: int = 500
+    frequency_hz: int | None = None
 
     def __post_init__(self) -> None:
         limits = (
@@ -31,6 +44,10 @@ class Beep:
                 raise ValueError(
                     f"{name} must be an integer between {minimum} and {maximum}"
                 )
+        if self.frequency_hz is not None and (
+            type(self.frequency_hz) is not int or self.frequency_hz <= 0
+        ):
+            raise ValueError("frequency_hz must be a positive integer or None")
         estimated_ms = self.count * self.duration_ms + (self.count - 1) * self.interval_ms
         if estimated_ms > MAX_TOTAL_MS:
             raise ValueError(f"estimated signal duration exceeds {MAX_TOTAL_MS} ms")
@@ -42,6 +59,8 @@ class Beep:
 class Backend(Protocol):
     """Interface for future hardware transports."""
 
+    capabilities: BackendCapabilities
+
     def send(self, beep: Beep) -> None:
         ...
 
@@ -51,6 +70,7 @@ class ProcfsBackend:
     """UGREEN vendor-kernel `/proc/nas/beeper` transport."""
 
     path: Path = DEFAULT_DEVICE
+    capabilities = BackendCapabilities()
 
     def send(self, beep: Beep) -> None:
         if not self.path.exists():
@@ -72,16 +92,47 @@ class Beeper:
     def __init__(self, backend: Optional[Backend] = None) -> None:
         self.backend = backend if backend is not None else ProcfsBackend()
 
+    @property
+    def capabilities(self) -> BackendCapabilities:
+        """Capabilities of the selected backend.
+
+        Legacy third-party backends without this attribute are treated
+        conservatively as supporting no optional features.
+        """
+        return getattr(self.backend, "capabilities", BackendCapabilities())
+
+    def validate(self, operation: Beep) -> None:
+        """Reject requests that the selected backend would ignore."""
+        frequency_hz = operation.frequency_hz
+        if frequency_hz is None:
+            return
+        capabilities = self.capabilities
+        if not capabilities.supports_frequency:
+            raise UnsupportedFrequencyError(
+                "frequency control is not supported by this backend; "
+                "the UGREEN procfs driver only accepts count, duration and interval"
+            )
+        if capabilities.frequency_range_hz is not None:
+            minimum, maximum = capabilities.frequency_range_hz
+            if not minimum <= frequency_hz <= maximum:
+                raise UnsupportedFrequencyError(
+                    f"frequency {frequency_hz} Hz is outside this backend's "
+                    f"supported range ({minimum}–{maximum} Hz)"
+                )
+
     def beep(
         self,
         count: int = 1,
         duration_ms: int = 400,
         interval_ms: int = 500,
+        frequency_hz: int | None = None,
     ) -> Beep:
         operation = Beep(
             count=count,
             duration_ms=duration_ms,
             interval_ms=interval_ms,
+            frequency_hz=frequency_hz,
         )
+        self.validate(operation)
         self.backend.send(operation)
         return operation

@@ -2,7 +2,14 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from ugreen_beeper import Beep, Beeper, BeeperError, ProcfsBackend
+from ugreen_beeper import (
+    BackendCapabilities,
+    Beep,
+    Beeper,
+    BeeperError,
+    ProcfsBackend,
+    UnsupportedFrequencyError,
+)
 
 
 class FakeBackend:
@@ -11,6 +18,10 @@ class FakeBackend:
 
     def send(self, beep):
         self.sent.append(beep)
+
+
+class FrequencyBackend(FakeBackend):
+    capabilities = BackendCapabilities(True, (500, 2_000))
 
 
 class BeeperTests(unittest.TestCase):
@@ -36,6 +47,23 @@ class BeeperTests(unittest.TestCase):
         fake = FakeBackend()
         operation = Beeper(fake).beep(count=3, duration_ms=150, interval_ms=200)
         self.assertEqual(fake.sent, [operation])
+
+    def test_procfs_rejects_frequency_instead_of_ignoring_it(self):
+        with self.assertRaisesRegex(UnsupportedFrequencyError, "not supported"):
+            Beeper(ProcfsBackend()).beep(frequency_hz=1_500)
+
+    def test_frequency_capable_backend_receives_requested_frequency(self):
+        fake = FrequencyBackend()
+        operation = Beeper(fake).beep(frequency_hz=1_500)
+        self.assertEqual(operation.frequency_hz, 1_500)
+        self.assertEqual(fake.sent, [operation])
+
+    def test_frequency_validation_and_range(self):
+        for value in (0, -1, True, "1500"):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                Beep(frequency_hz=value)
+        with self.assertRaisesRegex(UnsupportedFrequencyError, "outside"):
+            Beeper(FrequencyBackend()).beep(frequency_hz=2_001)
 
     def test_procfs_backend_writes_newline_terminated_command(self):
         with tempfile.TemporaryDirectory() as temp_dir:

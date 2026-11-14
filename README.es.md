@@ -57,8 +57,16 @@ Beeper().beep(count=3, duration_ms=150, interval_ms=200)
 ```
 
 La frecuencia `-f` del script original `ugbeep` **no funciona** en el driver
-verificado. No se debe tocar directamente el PWM: el controlador del kernel
-ya es propietario del dispositivo. Tampoco hay cola de reproducción para
-múltiples procesos en esta versión. El uso simultáneo podría interferir.
+verificado: el módulo fija el PWM en ~950 Hz. La CLI 0.2.0 acepta
+`--frequency` para mantener una API evolutiva, pero `ProcfsBackend` lo rechaza
+explícitamente —también con `--dry-run`— y nunca lo ignora. No se debe tocar
+directamente el PWM: el controlador del kernel ya es propietario del
+dispositivo. Tampoco hay cola de reproducción para múltiples procesos en esta
+versión. El uso simultáneo podría interferir.
 
-Consulta [README.md](README.md) para todos los parámetros, pruebas y límites.
+La API de Python admite `frequency_hz`, pero solo un backend que declare
+`supports_frequency` puede recibirlo; de lo contrario se lanza
+`UnsupportedFrequencyError`. Consulta [README.md](README.md) para todos los
+parámetros, pruebas y límites, y [docs/hardware.md](docs/hardware.md) para la
+investigación. La propuesta experimental y el procedimiento seguro están en
+[docs/propuesta-driver-frecuencia.es.md](docs/propuesta-driver-frecuencia.es.md).

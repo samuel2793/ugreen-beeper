@@ -15,7 +15,7 @@ def make_parser() -> argparse.ArgumentParser:
         prog="ugreen-beep",
         description="Control a supported UGREEN NAS hardware beeper.",
     )
-    parser.add_argument("--version", action="version", version="%(prog)s 0.1.0")
+    parser.add_argument("--version", action="version", version="%(prog)s 0.2.0")
     commands = parser.add_subparsers(dest="command", required=True)
 
     def add_transport(subparser: argparse.ArgumentParser) -> None:
@@ -32,6 +32,10 @@ def make_parser() -> argparse.ArgumentParser:
     beep_cmd.add_argument("-t", "--count", type=int, default=1, help="number of beeps (1–20)")
     beep_cmd.add_argument("-l", "--duration-ms", type=int, default=400, help="on-time in ms (10–5000)")
     beep_cmd.add_argument("-i", "--interval-ms", type=int, default=500, help="pause in ms (0–10000)")
+    beep_cmd.add_argument(
+        "-f", "--frequency", dest="frequency_hz", type=int,
+        help="physical frequency in Hz (only on a backend that explicitly supports it)",
+    )
     add_transport(beep_cmd)
 
     event_cmd = commands.add_parser("event", help="emit a configured named event")
@@ -57,16 +61,18 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     try:
         if args.command == "beep":
-            operation = Beep(args.count, args.duration_ms, args.interval_ms)
+            operation = Beep(
+                args.count, args.duration_ms, args.interval_ms, args.frequency_hz
+            )
         else:
             operation = load_event(args.config, args.name)
 
+        beeper = Beeper(ProcfsBackend(args.device))
+        beeper.validate(operation)
         if args.dry_run:
             print(operation.command())
         else:
-            Beeper(ProcfsBackend(args.device)).beep(
-                operation.count, operation.duration_ms, operation.interval_ms
-            )
+            beeper.backend.send(operation)
         return 0
     except (ValueError, EventConfigError, BeeperError) as exc:
         print(f"ugreen-beep: {exc}", file=sys.stderr)
