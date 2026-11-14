@@ -49,3 +49,24 @@ release `6.1.84`, checks the resulting ARM64 vermagic, and writes only to the
 selected output directory. It does not SSH, copy, load, unload or install a
 module. Building against upstream Linux 6.1.84 was sufficient for the initial
 experimental validation but is not a substitute for the vendor build tree.
+
+## Temporary NAS activation
+
+After building, activation is one explicit command from the development host:
+
+```sh
+scripts/activate-temporary-nas-module.sh --yes ./dist/ug_beep.ko nas
+```
+
+It copies the module only to `/tmp/ugreen-beeper`, checks the target kernel,
+preserves `/proc/nas/sata_sw`, and automatically reloads the vendor module if
+probe verification fails. It emits no beep. The module disappears after a
+reboot. To revert immediately without rebooting:
+
+```sh
+scripts/restore-vendor-nas-module.sh nas
+```
+
+Both commands require SSH access and passwordless `sudo` for the relevant
+module commands. Do not run activation during active writes, RAID work, or
+when physical recovery is unavailable.
