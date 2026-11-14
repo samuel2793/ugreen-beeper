@@ -3,12 +3,30 @@
 Es una propuesta de diseño, no una guía de instalación ni un parche listo para
 producción. Parte del módulo documentado en [hardware.md](hardware.md).
 
+La propuesta cuenta además con una implementación experimental limpia en
+[`kernel/ug_beep_frequency`](../kernel/ug_beep_frequency). En el DH4300 Plus
+se cargó temporalmente desde `/tmp`: mantuvo `sata_sw`, publicó los atributos
+sysfs y cambió el PWM desactivado de 950 a 1000 Hz (periodo de 1.000.000 ns).
+Un `rep 1 100 0` terminó con el PWM apagado. No es una medición con
+osciloscopio ni una validación auditiva independiente, y no debe instalarse de
+forma persistente sin el árbol de fuentes UGREEN.
+
 ## Objetivo
 
-Añadir al driver propietario del PWM un comando documentado `freq <hz>` (o un
-atributo sysfs específico). Debe aplicar `period = NSEC_PER_SEC / frequency_hz`
-con un duty cercano al 50 % mediante `pwm_apply_state()`, y conservar `rep`
-para la reproducción finita.
+Añadir al driver propietario del PWM estos atributos sysfs documentados:
+
+```text
+/sys/devices/platform/ug-beep/frequency_hz       # lectura/escritura, Hz seleccionados
+/sys/devices/platform/ug-beep/frequency_min_hz   # solo lectura
+/sys/devices/platform/ug-beep/frequency_max_hz   # solo lectura
+```
+
+La escritura de `frequency_hz` debe aplicar `period = NSEC_PER_SEC /
+frequency_hz` con un duty cercano al 50 % mediante `pwm_apply_state()`, y
+conservar `rep` para la reproducción finita. `SysfsFrequencyProcfsBackend`
+implementa este contrato: verifica los límites, escribe la frecuencia y envía
+el `rep` actual. Se desactiva si falta algún atributo, por lo que el kernel
+UGREEN de serie no recibirá nunca una frecuencia por accidente.
 
 ## Condiciones necesarias
 

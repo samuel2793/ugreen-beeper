@@ -6,7 +6,13 @@ import sys
 from pathlib import Path
 from typing import Optional, Sequence
 
-from .core import DEFAULT_DEVICE, Beep, Beeper, BeeperError, ProcfsBackend
+from .core import (
+    DEFAULT_DEVICE,
+    Beep,
+    Beeper,
+    BeeperError,
+    SysfsFrequencyProcfsBackend,
+)
 from .events import EventConfigError, load_event
 
 
@@ -67,7 +73,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         else:
             operation = load_event(args.config, args.name)
 
-        beeper = Beeper(ProcfsBackend(args.device))
+        # The sysfs extension self-disables unless the compatible patched
+        # driver publishes its capability attributes. Normal procfs playback
+        # continues to work on the stock UGREEN driver.
+        beeper = Beeper(SysfsFrequencyProcfsBackend(args.device))
         beeper.validate(operation)
         if args.dry_run:
             print(operation.command())

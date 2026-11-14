@@ -96,6 +96,11 @@ does not prove the sound was physically audible.
 including with `--dry-run`, by `ProcfsBackend`. It must never become a no-op.
 A future backend may advertise it only when it changes the physical PWM signal.
 
+The included `SysfsFrequencyProcfsBackend` is ready for the documented
+driver extension: it discovers `/sys/devices/platform/ug-beep/frequency_{min,max}_hz`,
+writes `frequency_hz`, then sends `rep`. The stock driver exposes none of these
+attributes, so the CLI still rejects frequency requests there.
+
 ## Named events
 
 Copy `examples/events.json` to a suitable location such as

@@ -5,10 +5,23 @@ is based on the module inspected in [hardware.md](hardware.md).
 
 ## Goal
 
-Add a documented `freq <hz>` command (or a dedicated sysfs attribute) to the
-driver which already owns the PWM. It should atomically update the desired
-state using `pwm_apply_state()` with `period = NSEC_PER_SEC / frequency_hz`
-and approximately 50% duty, while retaining `rep` for finite playback.
+Add the following documented sysfs attributes to the driver which already owns
+the PWM:
+
+```text
+/sys/devices/platform/ug-beep/frequency_hz       # read/write, selected Hz
+/sys/devices/platform/ug-beep/frequency_min_hz   # read-only
+/sys/devices/platform/ug-beep/frequency_max_hz   # read-only
+```
+
+Writing `frequency_hz` should atomically update the desired state using
+`pwm_apply_state()` with `period = NSEC_PER_SEC / frequency_hz` and
+approximately 50% duty, while retaining `rep` for finite playback.
+
+`SysfsFrequencyProcfsBackend` implements this contract: it reads both limits,
+writes the requested frequency only when in range, then sends the existing
+`rep` command. It self-disables when any attribute is absent, so stock UGREEN
+kernels cannot accidentally receive a frequency request.
 
 ## Required safeguards
 

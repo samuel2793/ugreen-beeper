@@ -55,13 +55,18 @@ Only `rep` is used here. `beeper_write` has no frequency parsing path; its
 normal playback calls copy the configured PWM state and toggle enablement.
 No unknown procfs command was sent.
 
-Dynamic frequency changes are therefore **not available through the installed
+Dynamic frequency changes are **not available through the installed vendor
 procfs driver**. Direct PWM access would conflict with the `ug_beep` owner;
-unbind/rebind is not a supported approach. The least invasive viable route is
-a small extension of the owner driver, described but not deployed in
-[driver-frequency-proposal.md](driver-frequency-proposal.md). `ProcfsBackend`
-declares no frequency capability and rejects `frequency_hz` rather than
-silently ignoring it.
+unbind/rebind is not a supported approach.
+
+An experimental clean-room replacement is now available under
+[`kernel/ug_beep_frequency`](../kernel/ug_beep_frequency). It owns only the
+existing buzzer PWM and exposes a sysfs frequency contract; it is loaded from
+`/tmp` for testing and is not installed persistently. On the DH4300 Plus it
+was verified to change the disabled PWM from 950 Hz to 1000 Hz (1,000,000 ns
+period), preserve `sata_sw`, and automatically disable after a finite 100 ms
+beep. See its README for the exact validation boundary. It remains experimental
+until it is built from the vendor source tree and independently reviewed.
 
 ## Not yet verified
 

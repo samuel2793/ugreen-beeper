@@ -6,11 +6,13 @@ from .core import (
     Beeper,
     BeeperError,
     ProcfsBackend,
+    SysfsFrequencyProcfsBackend,
     UnsupportedFrequencyError,
 )
 
 __all__ = [
     "BackendCapabilities", "Beep", "Beeper", "BeeperError", "ProcfsBackend",
+    "SysfsFrequencyProcfsBackend",
     "UnsupportedFrequencyError",
 ]
 __version__ = "0.2.0"

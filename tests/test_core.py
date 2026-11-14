@@ -8,6 +8,7 @@ from ugreen_beeper import (
     Beeper,
     BeeperError,
     ProcfsBackend,
+    SysfsFrequencyProcfsBackend,
     UnsupportedFrequencyError,
 )
 
@@ -51,6 +52,33 @@ class BeeperTests(unittest.TestCase):
     def test_procfs_rejects_frequency_instead_of_ignoring_it(self):
         with self.assertRaisesRegex(UnsupportedFrequencyError, "not supported"):
             Beeper(ProcfsBackend()).beep(frequency_hz=1_500)
+
+    def test_sysfs_backend_applies_frequency_then_procfs_command(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            directory = Path(temp_dir)
+            beeper_path = directory / "beeper"
+            frequency_path = directory / "frequency_hz"
+            minimum_path = directory / "frequency_min_hz"
+            maximum_path = directory / "frequency_max_hz"
+            for path, value in (
+                (beeper_path, ""), (frequency_path, ""),
+                (minimum_path, "500\n"), (maximum_path, "2000\n"),
+            ):
+                path.write_text(value)
+            backend = SysfsFrequencyProcfsBackend(
+                beeper_path, frequency_path, minimum_path, maximum_path
+            )
+            operation = Beeper(backend).beep(count=2, frequency_hz=1_500)
+            self.assertEqual(operation.frequency_hz, 1_500)
+            self.assertEqual(frequency_path.read_text(), "1500\n")
+            self.assertEqual(beeper_path.read_text(), "rep 2 400 500\n")
+
+    def test_sysfs_backend_does_not_claim_missing_driver_extension(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            backend = SysfsFrequencyProcfsBackend(Path(temp_dir) / "beeper")
+            self.assertFalse(backend.capabilities.supports_frequency)
+            with self.assertRaisesRegex(UnsupportedFrequencyError, "not supported"):
+                Beeper(backend).beep(frequency_hz=1_500)
 
     def test_frequency_capable_backend_receives_requested_frequency(self):
         fake = FrequencyBackend()

@@ -64,6 +64,17 @@ directamente el PWM: el controlador del kernel ya es propietario del
 dispositivo. Tampoco hay cola de reproducción para múltiples procesos en esta
 versión. El uso simultáneo podría interferir.
 
+`SysfsFrequencyProcfsBackend` ya implementa el contrato del driver ampliado:
+descubre los límites sysfs, escribe `frequency_hz` y después envía `rep`. El
+driver de serie no publica esos atributos, por lo que la CLI seguirá rechazando
+la frecuencia hasta instalar y validar dicho driver.
+
+Existe un reemplazo experimental del driver en
+[`kernel/ug_beep_frequency`](kernel/ug_beep_frequency), probado temporalmente
+en el DH4300 Plus. No se instala automáticamente, no persiste tras reiniciar y
+no debe utilizarse en un NAS con cargas críticas sin revisar su procedimiento
+de recuperación.
+
 La API de Python admite `frequency_hz`, pero solo un backend que declare
 `supports_frequency` puede recibirlo; de lo contrario se lanza
 `UnsupportedFrequencyError`. Consulta [README.md](README.md) para todos los
